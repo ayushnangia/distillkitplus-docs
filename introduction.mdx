@@ -41,47 +41,16 @@ Inspired by [`acree-ai/DistillKit`](https://github.com/arcee-ai/DistillKit), thi
 *   **Distributed Training**: Integrates with Hugging Face `accelerate` and `deepspeed` for scaling training across multiple GPUs or nodes.
 *   **Flexible Loss Functions**: Includes various distillation loss options like Forward KL Divergence (`fkl`), Universal Logit Distillation (`uld`), and Multi-Level Optimal Transport (`multi-ot`).
 
-## System Architecture
-
-DistilKitPlus follows a modular architecture where components work together to enable efficient knowledge distillation:
-
-```mermaid
-graph TD
-    A[Dataset Loader] -->|Loads & formats data| B[DistillationDataset]
-    B -->|Student data| C[LogitsTrainer]
-    
-    D[TFRecordDataLoader] -->|Pre-computed logits| B
-    
-    E[Teacher Model] -->|On-the-fly logits| C
-    
-    B -->|Tokenized data| C
-    
-    F[Loss Functions] -->|Distillation loss| C
-    
-    G[PEFT/LoRA] -->|Efficient fine-tuning| C
-    
-    C -->|Trains| H[Student Model]
-    
-    I[Configuration] -->|Parameters| A
-    I -->|Parameters| B
-    I -->|Parameters| C
-    I -->|Parameters| E
-    I -->|Parameters| G
-    I -->|Parameters| H
-```
 
 ## Getting Started
 
-Ready to distill your own model? Head over to the [Quickstart](./quickstart) guide to set up the library and run your first distillation job.
+Ready to distill your own model? Head over to the [Installation](./installation) guide to set up the library and then follow the steps in [Running Distillation](./running-distillation) to run your first distillation job.
 
 ## Dive Deeper
 
 Explore the **Essentials** section in the sidebar to understand the core components:
 
 *   **[Configuration](./essentials/configuration)**: Learn how to set up your distillation runs.
-*   **[Datasets](./essentials/datasets)**: Understand how data and logits are handled.
-*   **[Models](./essentials/models)**: See how student and teacher models are loaded and configured (including PEFT and quantization).
-*   **[Trainer](./essentials/trainer)**: Discover the custom `LogitsTrainer` used for distillation.
 *   **[Losses](./essentials/losses)**: Explore the available distillation loss functions.
 *   **[Formatters](./essentials/formatters)**: Learn how raw data is prepared for the models.
 

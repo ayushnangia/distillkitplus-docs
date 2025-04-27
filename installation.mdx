@@ -23,3 +23,19 @@ pip install -e .
 
 If you plan to run distillation jobs on [Modal](https://modal.com/), you'll need to set up your Modal API token.
 
+## Using Docker (Optional)
+
+For a containerized setup, a [`Dockerfile`](https://github.com/agokrani/distillKitPlus/blob/main/Dockerfile) is provided. 
+You can build the Docker image using:
+
+```bash
+docker build -t distillkitplus .
+```
+
+Then, you can run the container. By default, it runs the `scripts/local/distill_logits.py` script with the default configuration.
+
+```bash
+docker run -it --rm --gpus all distillkitplus
+```
+
+

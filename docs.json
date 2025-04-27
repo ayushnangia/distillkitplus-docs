@@ -24,10 +24,7 @@
           {
             "group": "Essentials",
             "pages": [
-              "essentials/datasets",
-              "essentials/trainer",
               "essentials/losses",
-              "essentials/models",
               "essentials/configuration",
               "essentials/formatters"
             ]

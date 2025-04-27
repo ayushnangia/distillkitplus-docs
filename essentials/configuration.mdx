@@ -320,7 +320,7 @@ This section contains standard Hugging Face `TrainingArguments` parameters. Here
       <tr>
         <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">loss_kwargs</td>
         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
-        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Additional parameters for specific loss types (only needed for "uld" and "multi-ot").</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Additional parameters for "multi-ot" loss type. Parameters: "log_loss_weight", "sikhorn_loss_weight".</td>
       </tr>
     </tbody>
   </table>
@@ -544,16 +544,14 @@ Here's a complete example configuration file for a typical distillation scenario
 1. **Memory Optimization:**
    - Enable quantization (`quantization.enabled: true`) for large models
    - Use LoRA (`lora.enable_training: true`) instead of full model fine-tuning
-   - Use pre-computed logits for large teacher models
    - Adjust `tokenizer.max_length` based on your GPU memory
 
 2. **Training Speed:**
    - Enable Flash Attention 2 with `model_config.use_flash_attention: true`
    - Use bfloat16 mixed precision with `training.bf16: true` on compatible hardware
    - Increase `training.per_device_train_batch_size` if memory allows
-   - Set up distributed training with `execution.use_accelerate: true`
+   - Set up distributed training with `execution.use_accelerate: true` 
 
 3. **Result Quality:**
-   - Try different loss types (`distillation.loss_type`)
    - Experiment with temperature values (typically between 1.0-4.0)
    - Adjust alpha to balance between distillation and task losses
