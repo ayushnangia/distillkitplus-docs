@@ -1,98 +1,609 @@
-# Configuration (`config.json`)
+# Configuration System
 
-Configuration for distillation runs in `distillKitPlus` is managed via JSON files, typically named `config.json` or similar (e.g., `default_config.json`). These files define all the necessary parameters for setting up the dataset, models, tokenizer, training process, and distillation-specific settings.
+Configuration for distillation runs in `distillKitPlus` is managed via JSON files. These files define all the necessary parameters for setting up datasets, models, tokenizers, training processes, and distillation-specific settings.
 
-Below is a breakdown of the structure based on `default_config.json`:
+## Configuration File Structure
+
+The configuration is organized into logical sections that correspond to different aspects of the distillation process. Here's a visual breakdown of the configuration structure:
+
+```mermaid
+graph TD
+    A[config.json] --> B[project_name]
+    A --> C[dataset]
+    A --> D[models]
+    A --> E[tokenizer]
+    A --> F[training]
+    A --> G[distillation]
+    A --> H[model_config]
+    A --> I[lora]
+    A --> J[quantization]
+    A --> K[execution]
+    A --> L[hf_token]
+    
+    C --> C1[name]
+    C --> C2[split]
+    C --> C3[logits_file]
+    C --> C4[num_samples]
+    C --> C5[...]
+    
+    D --> D1[teacher]
+    D --> D2[student]
+    D --> D3[student_adapter]
+    D --> D4[teacher_adapter]
+    D --> D5[teacher_vocab_size]
+    
+    F --> F1[output_dir]
+    F --> F2[num_train_epochs]
+    F --> F3[per_device_train_batch_size]
+    F --> F4[...]
+    
+    G --> G1[temperature]
+    G --> G2[alpha]
+    G --> G3[loss_type]
+    G --> G4[k]
+    G --> G5[loss_kwargs]
+    
+    I --> I1[enable_training]
+    I --> I2[r]
+    I --> I3[alpha]
+    I --> I4[target_modules]
+    
+    style A fill:#e1f5fe,stroke:#01579b
+    style G fill:#e8f5e9,stroke:#2e7d32
+    style I fill:#e8f5e9,stroke:#2e7d32
+```
+
+## Detailed Configuration Parameters
+
+Here's a complete reference for all available configuration options:
+
+### Top-Level Configuration
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">project_name</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Name for the distillation project (used for logging)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">dataset</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Dataset configuration (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">models</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Model configuration (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">tokenizer</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Tokenizer configuration (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">training</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Training arguments (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">distillation</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Distillation-specific settings (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">model_config</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Model loading options (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">lora</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">LoRA/PEFT configuration (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">quantization</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Quantization settings (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">execution</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Execution environment settings (see below)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">hf_token</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Hugging Face API token for private models/datasets</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Dataset Configuration (`dataset`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">name</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Path or Hugging Face dataset name</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">split</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Dataset split to use (e.g., "train", "validation")</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">logits_file</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Path to TFRecord file with pre-computed logits (null for on-the-fly)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">num_samples</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Maximum number of samples to use (null for all)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">select_range</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">[number, number] | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Range of samples to select [start, end] (null for all)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">format_function</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Name of formatter function (see Formatters section)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Models Configuration (`models`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">teacher</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Teacher model path/ID (needed if logits_file is null)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">student</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Student model path/ID</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">student_adapter</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Path to pre-trained student adapter (e.g., LoRA)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">teacher_adapter</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Path to pre-trained teacher adapter</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">teacher_vocab_size</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Vocabulary size of teacher model (required if using logits_file)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Tokenizer Configuration (`tokenizer`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">max_length</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Maximum sequence length for truncation/filtering</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">chat_template</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Optional Jinja chat template string</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">student_pad_token_id</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Pad token ID for student tokenizer</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">teacher_pad_token_id</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Pad token ID for teacher tokenizer</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Training Configuration (`training`)
+
+This section contains standard Hugging Face `TrainingArguments` parameters. Here are the most common ones:
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">output_dir</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Directory to save model checkpoints and results</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">num_train_epochs</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Number of training epochs</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">per_device_train_batch_size</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Batch size per GPU</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">gradient_accumulation_steps</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Number of forward passes before backward pass</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">save_steps</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Save checkpoint every N steps</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">logging_steps</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Log metrics every N steps</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">learning_rate</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Initial learning rate</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">warmup_ratio</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Ratio of steps for learning rate warmup</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">lr_scheduler_type</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">LR scheduler (e.g., "cosine", "linear")</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">resume_from_checkpoint</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Path to checkpoint to resume from</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">bf16</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">boolean</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Enable bfloat16 mixed precision training</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">fp16</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">boolean</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Enable float16 mixed precision training</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Distillation Configuration (`distillation`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">temperature</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Temperature for softening distributions (typically 2.0-4.0)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">alpha</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Weight for distillation loss (between 0-1)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">loss_type</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Distillation loss type: "fkl", "kld", "uld", "multi-ot"</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">student_response_template</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Template for student response (used in uld/multi-ot)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">teacher_response_template</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Template for teacher response (used in uld/multi-ot)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">k</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Top-k parameter for "uld" and "multi-ot" losses</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">loss_kwargs</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">object</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Additional parameters for specific loss types</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Model Configuration (`model_config`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">use_flash_attention</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">boolean</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Enable Flash Attention 2 during model loading</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">trust_remote_code</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">boolean</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Set trust_remote_code for model loading</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### LoRA Configuration (`lora`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">enable_training</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">boolean</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Enable LoRA training for the student model</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">r</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">LoRA rank (typically 8-64)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">alpha</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">LoRA alpha scaling factor (typically 2×r)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">dropout</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">number</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Dropout probability in LoRA layers</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">bias</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">LoRA bias type: "none", "all", "lora_only"</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">task_type</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Type of task (usually "CAUSAL_LM")</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">target_modules</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">array of strings</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">List of modules to apply LoRA to (e.g., "q_proj", "k_proj")</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">modules_to_save</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">array of strings</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Additional modules to make trainable</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Quantization Configuration (`quantization`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">enabled</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">boolean</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Enable 4-bit quantization (BitsAndBytes NF4)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### Execution Configuration (`execution`)
+
+<div className="overflow-x-auto mt-4">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parameter</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">use_accelerate</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">boolean</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Whether HF Accelerate is used (for distributed training)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">accelerate_config</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">string | null</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Path to accelerate config file (optional)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## Sample Configuration
+
+Here's a complete example configuration file for a typical distillation scenario:
 
 ```json
 {
-    "project_name": "distil-logits", // Name for logging (e.g., WandB)
-    "dataset": {
-        "name": "huggingface/dataset-name", // Path or HF Hub ID
-        "split": "train",               // e.g., "train", "validation"
-        "logits_file": "path/to/logits.tfrecord", // Path to pre-computed TFRecord logits. If null, requires teacher model.
-        "num_samples": 10000,           // Max samples to use (null for all)
-        "select_range": null,             // [start, end] to select a slice (null for none)
-        "format_function": null         // Optional: path/name of a custom formatting function
-    },
-    "models": {
-        "teacher": "meta-llama/Llama-3.1-70B-Instruct", // Teacher model path/ID (needed if logits_file is null)
-        "student": "meta-llama/Llama-3.1-8B-Instruct", // Student model path/ID
-        "student_adapter": null,            // Optional: path to pre-trained student adapter (e.g., LoRA)
-        "teacher_adapter": null,            // Optional: path to pre-trained teacher adapter
-        "teacher_vocab_size": 128256       // Teacher vocab size (required if logits_file is used)
-    },
-    "tokenizer": {
-        "max_length": 4096,               // Max sequence length for truncation/filtering
-        "chat_template": null,            // Optional: Jinja chat template string
-        "student_pad_token_id": 128001,   // Pad token ID for student tokenizer
-        "teacher_pad_token_id": 128001    // Pad token ID for teacher tokenizer
-    },
-    "training": { // Standard Hugging Face TrainingArguments
-        "output_dir": "distilled_model_output",
-        "num_train_epochs": 3,
-        "per_device_train_batch_size": 2,
-        "gradient_accumulation_steps": 4,
-        "save_steps": 500,
-        "logging_steps": 10,
-        "learning_rate": 2e-5,
-        "weight_decay": 0.01,
-        "warmup_ratio": 0.03,
-        "lr_scheduler_type": "cosine",
-        "resume_from_checkpoint": null, // Path to checkpoint to resume from
-        "fp16": false,                  // Use FP16 mixed precision
-        "bf16": true                   // Use BF16 mixed precision (recommended on A100/H100)
-    },
-    "distillation": { // Parameters for LogitsTrainer and loss function
-        "temperature": 2.0,             // Softmax temperature for KL/softmax
-        "alpha": 0.1,                   // Weight for distillation loss (loss = alpha*kd_loss + (1-alpha)*task_loss)
-        "loss_type": "uld",             // Distillation loss: "fkl", "kld", "uld", "multi-ot"
-        "student_response_template": "<|start_header_id|>assistant<|end_header_id|>\\n\\n", // Used for label generation in uld/multi-ot if needed
-        "teacher_response_template": "<|start_header_id|>assistant<|end_header_id|>\\n\\n", // Used for label generation in uld/multi-ot if needed
-        "k": 100,                       // Top-k parameter for "uld" and "multi-ot" losses
-        "loss_kwargs": {                // Optional additional kwargs for specific loss types
-            // "log_loss_weight": 0.1,   // e.g., for multi-ot
-            // "sikhorn_loss_weight": 0.1 // e.g., for multi-ot
-        }
-    },
-    "model_config": {
-        "use_flash_attention": true,     // Enable Flash Attention 2 during model loading
-        "trust_remote_code": false      // Set trust_remote_code for model loading
-    },
-    "lora": { // LoRA configuration (only used if enable_training=true and student_adapter=null)
-        "enable_training": true,        // Enable LoRA training for the student model
-        "r": 16,                        // LoRA rank
-        "alpha": 32,                    // LoRA alpha scaling
-        "dropout": 0.05,
-        "bias": "none",                 // LoRA bias ("none", "all", "lora_only")
-        "task_type": "CAUSAL_LM",
-        "target_modules": [             // Modules to apply LoRA to
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj"
-        ],
-         "modules_to_save": []          // Optional: Modules to make trainable *in addition* to LoRA layers
-    },
-    "quantization": {
-        "enabled": true                 // Enable 4-bit quantization (BitsAndBytes NF4) for model loading
-    },
-    "execution": {
-        "use_accelerate": true,         // Whether HF Accelerate is used (for distributed training)
-        "accelerate_config": null       // Optional: path to accelerate config file (e.g., in accelerate_configs/)
-    },
-    "hf_token": null                    // Optional: Hugging Face API token if needed for private models/datasets
+  "project_name": "llama-3.1-70b-to-8b-distillation",
+  "dataset": {
+    "name": "tatsu-lab/alpaca",
+    "split": "train",
+    "logits_file": "logits/llama-3.1-70b-alpaca.tfrecord",
+    "num_samples": 10000,
+    "select_range": null,
+    "format_function": "default_format"
+  },
+  "models": {
+    "teacher": null,
+    "student": "meta-llama/Llama-3.1-8B-Instruct",
+    "student_adapter": null,
+    "teacher_adapter": null,
+    "teacher_vocab_size": 128256
+  },
+  "tokenizer": {
+    "max_length": 2048,
+    "chat_template": null,
+    "student_pad_token_id": 128001,
+    "teacher_pad_token_id": 128001
+  },
+  "training": {
+    "output_dir": "./distilled_model",
+    "num_train_epochs": 3,
+    "per_device_train_batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "save_steps": 500,
+    "logging_steps": 10,
+    "learning_rate": 2e-5,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.03,
+    "lr_scheduler_type": "cosine",
+    "resume_from_checkpoint": null,
+    "fp16": false,
+    "bf16": true
+  },
+  "distillation": {
+    "temperature": 2.0,
+    "alpha": 0.1,
+    "loss_type": "fkl",
+    "student_response_template": "<|start_header_id|>assistant<|end_header_id|>\n\n",
+    "teacher_response_template": "<|start_header_id|>assistant<|end_header_id|>\n\n",
+    "k": 100,
+    "loss_kwargs": {}
+  },
+  "model_config": {
+    "use_flash_attention": true,
+    "trust_remote_code": false
+  },
+  "lora": {
+    "enable_training": true,
+    "r": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "bias": "none",
+    "task_type": "CAUSAL_LM",
+    "target_modules": [
+      "q_proj", "k_proj", "v_proj", "o_proj",
+      "gate_proj", "up_proj", "down_proj"
+    ],
+    "modules_to_save": []
+  },
+  "quantization": {
+    "enabled": true
+  },
+  "execution": {
+    "use_accelerate": true,
+    "accelerate_config": null
+  },
+  "hf_token": null
 }
 ```
 
-## Key Sections Explained
+## Configuration Tips
 
-*   **`dataset`**: Defines where to get the data and how to process it. Crucially, `logits_file` determines if a teacher model needs to be loaded for on-the-fly logit generation.
-*   **`models`**: Specifies the student and teacher models (and optional adapters). `teacher` is only needed if `logits_file` is not provided.
-*   **`tokenizer`**: Configures tokenization parameters like max length and padding.
-*   **`training`**: Contains standard training hyperparameters passed to `transformers.TrainingArguments`.
-*   **`distillation`**: Holds parameters specific to the distillation process, like the loss weighting (`alpha`), `temperature`, and the chosen `loss_type`.
-*   **`model_config`**: Options applied during model loading, like enabling Flash Attention.
-*   **`lora`**: Controls LoRA fine-tuning for the student model if enabled.
-*   **`quantization`**: Enables loading base models in 4-bit precision.
-*   **`execution`**: Settings related to the training execution environment, especially for distributed setups using Accelerate.
+1. **Memory Optimization:**
+   - Enable quantization (`quantization.enabled: true`) for large models
+   - Use LoRA (`lora.enable_training: true`) instead of full model fine-tuning
+   - Use pre-computed logits for large teacher models
+   - Adjust `tokenizer.max_length` based on your GPU memory
 
-You would typically create a copy of `default_config.json` and modify it for your specific distillation task. 
+2. **Training Speed:**
+   - Enable Flash Attention 2 with `model_config.use_flash_attention: true`
+   - Use bfloat16 mixed precision with `training.bf16: true` on compatible hardware
+   - Increase `training.per_device_train_batch_size` if memory allows
+   - Set up distributed training with `execution.use_accelerate: true`
+
+3. **Result Quality:**
+   - Try different loss types (`distillation.loss_type`)
+   - Experiment with temperature values (typically between 1.0-4.0)
+   - Adjust alpha to balance between distillation and task losses

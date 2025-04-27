@@ -1,69 +1,194 @@
 ---
 title: 'Quickstart'
-description: 'Get started with DistilKitPlus'
+description: 'Get started with DistilKitPlus in minutes'
 ---
+
+# Quickstart Guide
+
+This guide will help you set up DistilKitPlus and run your first knowledge distillation process on language models. Follow these steps to quickly get a student model that mimics the capabilities of a larger teacher model.
 
 ## Installation
 
-To use `DistilKitPlus`, you first need to clone the repository and install the necessary dependencies.
+First, clone the repository and install the necessary dependencies.
 
 ```bash
-git clone https://github.com/agokrani/distillKitPlus.git # Updated URL
+git clone https://github.com/agokrani/distillKitPlus.git
 cd distillKitPlus
 pip install -r requirements.txt
-pip install -e . # Install the package in editable mode
+pip install -e .  # Install the package in editable mode
 ```
 
-Make sure you have the necessary dependencies installed, including `torch`, `transformers`, `trl`, `peft`, `datasets`, `accelerate`, `tensorflow` (for TFRecord loading), and potentially `deepspeed` if using it.
+Make sure you have the following key dependencies installed:
+- `torch`: PyTorch library for deep learning
+- `transformers`: Hugging Face's transformers library
+- `peft`: Parameter-Efficient Fine-Tuning methods
+- `datasets`: For handling datasets efficiently
+- `accelerate`: For distributed training (optional)
+- `bitsandbytes`: For quantization support (optional)
+- `deepspeed`: For advanced distributed training (optional)
+
+## Distillation Workflow
+
+The distillation process in DistilKitPlus follows this general workflow:
+
+```mermaid
+flowchart TD
+    A[Configure Distillation] --> B{Pre-compute Logits?}
+    B -->|Yes| C[Generate Teacher Logits]
+    B -->|No| E[Run Distillation]
+    C --> D[Save to TFRecord]
+    D --> E
+    E --> F[Validate Results]
+    F --> G[Export Distilled Model]
+    
+    style A fill:#e1f5fe,stroke:#01579b
+    style C fill:#e8f5e9,stroke:#2e7d32
+    style E fill:#e8f5e9,stroke:#2e7d32
+    style G fill:#f9fbe7,stroke:#827717
+```
 
 ## Running a Distillation Job
 
-The core process involves configuring and running the `distill_logits.py` script.
+### Step 1: Configure Your Distillation
 
-1.  **Configure:**
-    *   Navigate to the `config/` directory.
-    *   Make a copy of `default_config.json` (or another template like `config_online_qwq_phi4_uld.json`) and name it appropriately (e.g., `my_distillation_config.json`).
-    *   Edit your new config file, adjusting parameters in each section (`dataset`, `models`, `tokenizer`, `training`, `distillation`, etc.) according to your specific needs. Refer to the [Configuration](./essentials/configuration) page for details on each parameter.
-    *   **Crucially**, decide if you are using pre-computed logits or on-the-fly generation:
-        *   **Pre-computed:** Set `dataset.logits_file` to the path of your `.tfrecord` file and ensure `models.teacher_vocab_size` is correctly specified.
-        *   **On-the-fly:** Set `dataset.logits_file` to `null` and ensure `models.teacher` points to a valid teacher model identifier/path.
+Start by creating a configuration file:
 
-2.  **Run Locally:**
-    *   Execute the `distill_logits.py` script from the root directory of the repository, pointing it to your configuration file:
+1. Navigate to the `config/` directory
+2. Copy a template config (e.g., `default_config.json` or `config_online_qwq_phi4_uld.json`)
+3. Edit the configuration parameters according to your needs
 
-    ```bash
-    # Example using default config
-    python scripts/local/distill_logits.py --config config/default_config.json
+Here's an example of the key sections you'll need to modify:
 
-    # Example using a custom config
-    python scripts/local/distill_logits.py --config config/my_distillation_config.json
-    ```
+```json
+{
+  "project_name": "my-first-distillation",
+  "dataset": {
+    "name": "tatsu-lab/alpaca",  // Your dataset path
+    "logits_file": null,         // Set to path of .tfrecord if using pre-computed logits
+    "num_samples": 10000         // Limit samples for faster testing
+  },
+  "models": {
+    "teacher": "meta-llama/Llama-3.1-70B-Instruct",  // Your teacher model
+    "student": "meta-llama/Llama-3.1-8B-Instruct",   // Your student model
+    "teacher_vocab_size": 128256                     // Required for pre-computed logits
+  },
+  "tokenizer": {
+    "max_length": 2048  // Adjust based on your GPU memory
+  },
+  "training": {
+    "output_dir": "./distilled_model",
+    "per_device_train_batch_size": 1,
+    "num_train_epochs": 3,
+    "learning_rate": 2e-5
+  },
+  "distillation": {
+    "temperature": 2.0,
+    "alpha": 0.1,
+    "loss_type": "fkl"  // Try "uld" or "multi-ot" for better results
+  },
+  "lora": {
+    "enable_training": true,
+    "r": 16,
+    "alpha": 32
+  },
+  "quantization": {
+    "enabled": true  // Set to false if you have sufficient GPU memory
+  }
+}
+```
 
-3.  **Run with Accelerate (Distributed Training):**
-    *   Ensure `execution.use_accelerate` is `true` in your config file.
-    *   Optionally, specify an Accelerate config file path in `execution.accelerate_config` (refer to `accelerate_configs/` for examples) or configure Accelerate using `accelerate config`.
-    *   Launch the script using `accelerate launch`:
+Refer to the [Configuration](./essentials/configuration) page for detailed explanations of all available parameters.
 
-    ```bash
-    accelerate launch scripts/local/distill_logits.py --config config/my_distillation_config.json
-    ```
-    Accelerate will handle the distribution across multiple GPUs/nodes based on your Accelerate configuration.
+### Step 2: Run the Distillation Script
 
-4.  **Output:**
-    *   Training logs will be printed to the console (and potentially logged to WandB if configured).
-    *   Checkpoints will be saved periodically to subdirectories within the `training.output_dir` specified in your config.
-    *   The final trained model (or adapter) will be saved to `training.output_dir / "final-distilled-checkpoint"`.
+Execute the `distill_logits.py` script with your configuration:
+
+```bash
+# Running with local resources
+python scripts/local/distill_logits.py --config config/my_config.json
+
+# Running with Accelerate for multi-GPU training
+accelerate launch scripts/local/distill_logits.py --config config/my_config.json
+```
+
+### Step 3: Monitor Training Progress
+
+The script will output training logs to the console, showing:
+- Loss values (combined, distillation, and task losses)
+- Learning rate changes
+- Training speed (samples/second)
+- GPU memory usage
+
+If you've configured Weights & Biases integration, you can also monitor these metrics in real-time via the WandB dashboard.
+
+<div className="flex justify-center mb-8">
+  <img src="/images/checks-passed.png" alt="Training Metrics" className="rounded-lg shadow-md max-w-full" />
+</div>
+
+### Step 4: Use Your Distilled Model
+
+Once training completes, the final model will be saved to the directory specified in `training.output_dir` with a subdirectory called `final-distilled-checkpoint`. You can load it like any Hugging Face model:
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# For full model distillation
+model_path = "path/to/training.output_dir/final-distilled-checkpoint"
+model = AutoModelForCausalLM.from_pretrained(model_path)
+tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+# For LoRA adapter
+from peft import PeftModel, PeftConfig
+
+base_model_id = "meta-llama/Llama-3.1-8B-Instruct"  # Your student model
+adapter_path = "path/to/training.output_dir/final-distilled-checkpoint"
+
+model = AutoModelForCausalLM.from_pretrained(base_model_id)
+model = PeftModel.from_pretrained(model, adapter_path)
+tokenizer = AutoTokenizer.from_pretrained(base_model_id)
+```
 
 ## Generating Teacher Logits (Optional)
 
-If you prefer to pre-compute teacher logits instead of generating them on-the-fly during distillation, you can use the `generate_logits.py` script.
+For more memory-efficient training, especially with very large teacher models, you can pre-compute teacher logits:
 
-1.  **Configure:** This script likely uses a similar configuration file structure. Ensure the `models.teacher` and relevant `dataset` parameters are set correctly.
-2.  **Run:** Execute the script, potentially pointing to a specific config:
+```bash
+python scripts/local/generate_logits.py \
+  --config config/logit_generation_config.json \
+  --output_file path/to/save/teacher_logits.tfrecord
+```
 
-    ```bash
-    # Example (command might vary slightly based on the script's implementation)
-    python scripts/local/generate_logits.py --config config/my_teacher_config.json --output_file generated_logits.tfrecord
-    ```
+Then update your distillation config to use these pre-computed logits:
 
-    This will process the specified dataset using the teacher model and save the output logits to the specified TFRecord file (e.g., `generated_logits.tfrecord`). You can then use this path in the `dataset.logits_file` parameter of your main distillation config.
+```json
+{
+  "dataset": {
+    "logits_file": "path/to/save/teacher_logits.tfrecord"
+  },
+  "models": {
+    "teacher": null,  // No need to load teacher model
+    "teacher_vocab_size": 128256  // Must match the teacher model that generated logits
+  }
+}
+```
+
+## Next Steps
+
+- Explore the [Datasets](./essentials/datasets) section to understand how to prepare your data
+- Learn about different [Loss Functions](./essentials/losses) to optimize your distillation
+- Check [Configuration](./essentials/configuration) for all available settings
+- See [Models](./essentials/models) for details on loading and configuring models
+
+## Troubleshooting
+
+**Out of Memory Errors?**
+- Enable quantization (`quantization.enabled: true`)
+- Use LoRA instead of full fine-tuning (`lora.enable_training: true`)
+- Reduce `per_device_train_batch_size` and increase `gradient_accumulation_steps`
+- Pre-compute teacher logits to avoid loading both teacher and student models
+- Reduce `tokenizer.max_length` to process shorter sequences
+
+**Training Too Slow?**
+- Use Accelerate or DeepSpeed for multi-GPU training
+- Enable Flash Attention 2 (`model_config.use_flash_attention: true`)
+- Consider using BF16 mixed precision (`training.bf16: true`) on supported hardware
