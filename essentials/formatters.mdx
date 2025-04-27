@@ -1,0 +1,38 @@
+# Data Formatters
+
+The `distillKitPlus/components/formatters.py` module provides functions to pre-process raw dataset examples into a text format suitable for tokenization, often leveraging the chat templates associated with Hugging Face tokenizers.
+
+These formatters are typically used within the `DistillationDataset` by specifying the desired formatter name in the configuration file under `dataset.format_function`.
+
+## How it Works
+
+1.  **Selection:** The `get_formatter(format_function_name, tokenizer)` function acts as a factory. It takes the name specified in the config (e.g., `"default_format"`) and a tokenizer instance.
+2.  **Instantiation:** It looks up the name in a dictionary and calls the corresponding *formatter factory* function (e.g., `default_format(tokenizer)`). These factory functions return the actual *formatting function* (`format_func`).
+3.  **Mapping:** The returned `format_func` is designed to be passed to `dataset.map()`. It takes a batch of examples (usually a dictionary) and returns a dictionary containing a `"text"` key, whose value is a list of formatted strings ready for tokenization.
+
+## Available Formatters (`dataset.format_function`)
+
+Here are the built-in formatters you can specify in your configuration:
+
+*   **`"default_format"`**:
+    *   Assumes input examples have a `"messages"` key containing a list of chat turns (dicts with `"role"` and `"content"`).
+    *   Applies `tokenizer.apply_chat_template(messages, tokenize=False)` to each example.
+    *   This is the **fallback** if an unknown `format_function` name is provided.
+*   **`"sharegpt_format"`**:
+    *   Designed for datasets following the ShareGPT structure (e.g., a `"conversations"` key containing lists of turns with `"from"`: `"human"`/`"gpt"`/`"system"` and `"value"` keys).
+    *   Converts the ShareGPT structure into the standard list-of-dicts format (`role`: `user`/`assistant`/`system`, `content`).
+    *   Adds a default system prompt (`{"role": "system", "content": "You are a helpful assistant."}`) if one is not present.
+    *   Applies `tokenizer.apply_chat_template(..., tokenize=False)`.
+*   **`"comparison_format"`**:
+    *   Tailored for datasets comparing two responses (`response_a`, `response_b`) to a `prompt`, including a `rationale` and `winner`.
+    *   Constructs a specific multi-turn chat structure:
+        1.  System: Explains the comparison task.
+        2.  User: Presents the `prompt` and both `response_a`/`response_b`.
+        3.  Assistant: Provides the `rationale` and `winner`.
+    *   Applies `tokenizer.apply_chat_template(..., tokenize=False)`.
+*   **`"format_for_tokenization"`**:
+    *   A minimal formatter.
+    *   Simply extracts the content under the `"text"` key in the input examples. If `"text"` doesn't exist, it returns the whole example.
+    *   Does **not** apply any chat templating.
+
+By selecting the appropriate `format_function` in your config, you can adapt the `DistillationDataset` to various input data structures and prepare them correctly for the specified student and teacher models/tokenizers. 

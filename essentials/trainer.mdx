@@ -1,0 +1,48 @@
+# Trainer (`LogitsTrainer`)
+
+The `distillKitPlus` library provides a specialized trainer, `LogitsTrainer`, located in `distillKitPlus/components/trainer.py`. This trainer extends the `trl.SFTTrainer` (Supervised Fine-tuning Trainer from the TRL library) to facilitate knowledge distillation, particularly when using teacher model logits.
+
+## Overview
+
+The primary role of `LogitsTrainer` is to compute a combined loss function that includes both the standard task loss (e.g., language modeling loss) and a distillation loss term. This distillation loss encourages the student model's output distribution (logits) to match the teacher model's output distribution.
+
+It supports two main distillation scenarios:
+
+1.  **Pre-computed Logits:** When teacher logits are pre-calculated and loaded alongside the input data (e.g., using `DistillationDataset` with a `logits_file`).
+2.  **On-the-fly Logits:** When a `teacher_model` is provided to the trainer, it computes the teacher logits dynamically during training.
+
+## Initialization Parameters
+
+Besides the standard arguments accepted by `trl.SFTTrainer`, `LogitsTrainer` accepts the following distillation-specific parameters (often passed via `TrainingArguments` or directly during initialization):
+
+*   `temperature` (float, default: `2.0`): The temperature used for softening both student and teacher logits before calculating the KL divergence (or other distillation loss). Higher temperatures create softer probability distributions.
+*   `alpha` (float, default: `0.1`): The weighting factor for the distillation loss term. The final loss is typically calculated as `(1 - alpha) * task_loss + alpha * distillation_loss` (though the exact formula depends on the implementation within `compute_distillation_loss`).
+*   `loss_type` (str, default: `"fkl"`): Specifies the type of distillation loss function to use. This corresponds to the functions implemented in `components.loss.compute_distillation_loss`. Common options might include:
+    *   `fkl`: Forward KL Divergence \( D_{KL}(P_{teacher} || P_{student}) \)
+    *   `bkl`: Backward KL Divergence \( D_{KL}(P_{student} || P_{teacher}) \)
+    *   `skl`: Symmetric KL Divergence
+    *   `jsd`: Jensen-Shannon Divergence
+    *   `uld`: Unbiased Logit Distillation
+    *   `ot`: Optimal Transport based loss
+    *   `multi-ot`: Multi-head Optimal Transport loss
+    *   *(Refer to `components/loss.py` for the exact list and implementations)*
+*   `k` (int, default: `100`): A hyperparameter specifically used by the `uld` loss type.
+*   `student_temperature` (float, default: `temperature`): Allows setting a different temperature specifically for the student logits.
+*   `teacher_temperature` (float, default: `temperature`): Allows setting a different temperature specifically for the teacher logits.
+*   `skip_eos` (bool, default: `False`): A flag potentially used within the chosen `loss_type` calculation, possibly to exclude the End-of-Sequence token from the loss.
+*   `loss_kwargs` (Optional[Dict], default: `None`): A dictionary of additional keyword arguments that might be required by specific loss functions defined in `compute_distillation_loss`.
+*   `teacher_model` (Optional[PreTrainedModel]): If you are **not** providing pre-computed logits via the dataset, you **must** pass the teacher model instance here. The trainer will use it to compute teacher logits on-the-fly.
+
+## Core Logic (`compute_loss`)
+
+The main customization happens within the `compute_loss` method:
+
+1.  **Get Student Outputs:** Runs the forward pass of the student model with the current batch inputs to get `student_outputs` (which include logits and the standard `loss`).
+2.  **Get Teacher Logits:**
+    *   Checks if `logits` are present in the `inputs` dictionary (meaning they were loaded by the dataset).
+    *   If not, it calls the internal `_compute_teacher_logits` method, which runs the `self.teacher_model` (if provided) to generate teacher logits.
+3.  **Align Sequence Lengths:** Calls `_align_sequence_length` to ensure teacher and student logits have the same sequence length dimension. It truncates the longer sequence or pads the shorter one with zeros.
+4.  **Compute Distillation Loss:** Calls the external function `compute_distillation_loss` (from `components/loss.py`) passing the student logits, aligned teacher logits, the original student loss (`student_outputs.loss`), and all the configured distillation parameters (`alpha`, `temperature`, `loss_type`, etc.). This function returns the final combined loss.
+5.  **Return:** Returns the computed combined loss (and optionally the raw `student_outputs`).
+
+This trainer seamlessly integrates the distillation process into the standard Hugging Face/TRL training loop. 

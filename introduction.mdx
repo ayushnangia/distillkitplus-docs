@@ -1,71 +1,38 @@
 ---
 title: Introduction
-description: "Welcome to the home of your new documentation"
+description: ""
 ---
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.png"
-  alt="Hero Light"
-/>
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.png"
-  alt="Hero Dark"
-/>
+## Welcome to DistilKitPlus
 
-## Setting up
+`DistilKitPlus` is an open-source toolkit designed for high-performance knowledge distillation, specifically tailored for Large Language Models (LLMs).
 
-The first step to world-class documentation is setting up your editing environments.
+Inspired by `acree-ai/DistillKit`, this project aims to provide an easy-to-use framework, with a particular focus on supporting **offline distillation** (using pre-computed teacher logits) and **Parameter-Efficient Fine-Tuning (PEFT)** methods like LoRA, making it suitable for environments with limited computational resources.
 
-<CardGroup cols={2}>
-  <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
-  >
-    Get your docs set up locally for easy development
-  </Card>
-  <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
-  >
-    Preview your changes before you push to make sure they're perfect
-  </Card>
-</CardGroup>
+### Key Features
 
-## Make it yours
+*   ✅ **Logit Distillation**: Supports standard knowledge distillation using logits, primarily for same-architecture teacher/student pairs.
+*   💾 **Pre-Computed Logits**: Train efficiently by generating teacher logits beforehand, saving memory during the student training phase (See [Generating Teacher Logits](./quickstart#generating-teacher-logits-optional)).
+*   🚀 **PEFT Integration**: Leverages the `peft` library for efficient fine-tuning techniques like LoRA.
+*   <span title="4-bit Quantization">⚙️</span> **Quantization Support**: Load base models in 4-bit precision using `bitsandbytes` for reduced memory footprint and potentially faster execution.
+*   🌐 **Distributed Training**: Integrates with Hugging Face `accelerate` and `deepspeed` for scaling training across multiple GPUs or nodes.
+*   🧩 **Flexible Loss Functions**: Includes various distillation loss options like Forward KL Divergence (`fkl`), Unbiased Logit Distillation (`uld`), and Multi-Level Optimal Transport (`multi-ot`).
 
-Update your docs to your brand and add valuable content for the best user conversion.
+### Getting Started
 
-<CardGroup cols={2}>
-  <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
-  >
-    Customize your docs to your company's colors and brands
-  </Card>
-  <Card
-    title="Reference APIs"
-    icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
-  >
-    Automatically generate endpoints from an OpenAPI spec
-  </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/content/components/accordions"
-  >
-    Build interactive features and designs to guide your users
-  </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
-  </Card>
-</CardGroup>
+Ready to distill your own model? Head over to the [Quickstart](./quickstart) guide to set up the library and run your first distillation job.
+
+### Dive Deeper
+
+Explore the **Essentials** section in the sidebar to understand the core components:
+
+*   **[Configuration](./essentials/configuration)**: Learn how to set up your distillation runs.
+*   **[Datasets](./essentials/datasets)**: Understand how data and logits are handled.
+*   **[Models](./essentials/models)**: See how student and teacher models are loaded and configured (including PEFT and quantization).
+*   **[Trainer](./essentials/trainer)**: Discover the custom `LogitsTrainer` used for distillation.
+*   **[Losses](./essentials/losses)**: Explore the available distillation loss functions.
+*   **[Formatters](./essentials/formatters)**: Learn how raw data is prepared for the models.
+
+---
+
+*Reference [1]:* [https://github.com/agokrani/distillKitPlus](https://github.com/agokrani/distillKitPlus)

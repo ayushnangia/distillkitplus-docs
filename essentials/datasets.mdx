@@ -1,0 +1,74 @@
+import { Steps } from 'nextra/components'
+
+# Datasets
+
+The `distillKitPlus` library provides flexible dataset handling specifically designed for knowledge distillation tasks. The core components are found in `distillKitPlus/components/dataset.py`, primarily involving the `DistillationDataset` and `TFRecordDataLoader` classes.
+
+## `DistillationDataset`
+
+This is the main dataset class you'll interact with. It inherits from `torch.utils.data.Dataset` and orchestrates the loading, formatting, tokenization, and integration of student data and teacher logits.
+
+### Initialization Parameters
+
+*   `file_path` (str): Path to the dataset file or directory (supports Hugging Face `datasets` loading methods, including JSON/JSONL).
+*   `tokenizer`: The tokenizer for the student model.
+*   `max_seq_length` (int): Maximum sequence length for filtering and tokenization. Samples longer than this are discarded.
+*   `teacher_vocab_size` (int): The vocabulary size of the teacher model, required if loading logits.
+*   `teacher_tokenizer` (Optional): The tokenizer for the teacher model. **Required** if `loss_type` is 'uld' or 'multi-ot'.
+*   `teacher_format_func` (Optional[Callable]): A function to format examples specifically for the teacher model. **Required** if `loss_type` is 'uld' or 'multi-ot'.
+*   `teacher_data_collator` (Optional[Callable]): A data collator used to prepare teacher labels. **Required** if `loss_type` is 'uld' or 'multi-ot'.
+*   `format_func` (Optional[Callable]): A function to format examples before tokenization (defaults to returning the 'text' field).
+*   `split` (Optional[str]): The specific dataset split to load (e.g., 'train', 'validation').
+*   `num_samples` (Optional[int]): Limit the dataset to a specific number of samples (after filtering by `max_seq_length`).
+*   `logits_file` (Optional[str]): Path to the TFRecord file containing teacher logits.
+*   `select_range` (Optional[Tuple[int, int]]): A tuple specifying a start and end index to select a specific range of samples.
+*   `ignore_index` (int, default=-100): Index to ignore in loss calculations (standard for labels).
+*   `loss_type` (Optional[str]): Specifies the loss type (e.g., 'uld', 'multi-ot'). This affects whether teacher-specific processing (tokenization, label generation) is performed.
+
+### Core Functionality
+
+<Steps>
+
+### Loading
+Loads the dataset using Hugging Face `datasets` based on `file_path` and `split`. Supports loading from disk or hub, including JSON/JSONL formats.
+
+### Formatting
+Applies the `format_func` to prepare the text data for the student tokenizer. If `loss_type` requires it, also applies `teacher_format_func` to prepare text for the teacher tokenizer.
+
+### Tokenization
+Tokenizes the formatted text using the provided `tokenizer` (student) and optionally the `teacher_tokenizer`. It handles truncation based on `max_seq_length`. For 'uld' or 'multi-ot' losses, it uses the `teacher_data_collator` to generate `teacher_labels`.
+
+### Filtering
+Filters the dataset to keep only samples whose tokenized length (using the student tokenizer) is less than or equal to `max_seq_length`.
+
+### Logits Integration
+If `logits_file` is provided, it initializes a `TFRecordDataLoader` instance to load corresponding teacher logits for the valid samples. It ensures the number of valid samples matches the number of loaded logits.
+
+### Sampling
+Allows selecting a subset of the data using `num_samples` or `select_range`.
+
+</Steps>
+
+### Output Structure
+
+Each item retrieved via `__getitem__` is a dictionary containing:
+
+*   `input_ids`: Token IDs for the student model.
+*   `attention_mask`: Attention mask for the student model.
+*   `logits` (Optional): Teacher logits loaded from the TFRecord file.
+*   `teacher_input_ids` (Optional): Token IDs for the teacher model (if `loss_type` requires).
+*   `teacher_attention_mask` (Optional): Attention mask for the teacher model (if `loss_type` requires).
+*   `teacher_labels` (Optional): Labels generated for the teacher model (if `loss_type` requires).
+
+## `TFRecordDataLoader`
+
+This class is used internally by `DistillationDataset` when `logits_file` is provided. It's responsible for efficiently reading teacher logits stored in the TFRecord format.
+
+### Key Features
+
+*   **Indexing:** Indexes the TFRecord file on initialization to allow quick random access to specific records.
+*   **Parsing:** Parses the TFRecord protobuf messages to extract logits (stored as serialized float16 arrays) and sequence lengths.
+*   **Filtering:** Can be initialized with `valid_indices` (provided by `DistillationDataset` after length filtering) to only load logits corresponding to valid student samples.
+*   **Sampling:** Supports loading only a specific `num_samples`.
+
+This class is generally not interacted with directly but handles the backend for loading pre-computed teacher logits. 

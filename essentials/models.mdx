@@ -1,0 +1,41 @@
+# Model Loading and Configuration
+
+The `distillKitPlus/components/models.py` module centralizes the logic for loading and configuring language models (both student and teacher) and their corresponding tokenizers. It heavily utilizes the Hugging Face `transformers` and `peft` libraries.
+
+## Core Functions
+
+Several helper functions work together to load and prepare models:
+
+*   **`setup_tokenizer`**: Initializes an `AutoTokenizer` with project-specific settings like padding side, pad token ID, and optional chat templates defined in the configuration.
+*   **`get_model_kwargs`**: Assembles keyword arguments for `AutoModelForCausalLM.from_pretrained`, incorporating settings from the configuration like:
+    *   Data types (`torch_dtype`, `quant_storage_dtype` - typically `bfloat16`).
+    *   Hugging Face token (`hf_token`).
+    *   `trust_remote_code`.
+    *   `device_map` (set to `'auto'` unless using Accelerate).
+    *   Quantization (`BitsAndBytesConfig` for 4-bit NF4 with double quantization if `quantization.enabled`).
+    *   Flash Attention 2 (`attn_implementation='flash_attention_2'` if `model_config.use_flash_attention`).
+*   **`load_base_model`**: Loads the foundational transformer model using `AutoModelForCausalLM.from_pretrained` with arguments from `get_model_kwargs`. It can optionally load from/save to a cache directory and prepare the model for k-bit training (using `prepare_model_for_kbit_training`) if needed for LoRA.
+*   **`configure_lora`**: If LoRA training is enabled (`lora.enable_training`), this function creates a `LoraConfig` based on parameters in the `lora` section of the config (`r`, `alpha`, `target_modules`, etc.) and applies it to the base model using `get_peft_model`.
+*   **`load_adapter`**: Loads a pre-trained PEFT adapter (e.g., a LoRA adapter) onto a base model using `PeftModel.from_pretrained`. It ensures the loaded adapter's parameters are trainable.
+*   **`setup_model`**: Orchestrates the loading of a single model (student or teacher). It calls `load_base_model` and then either `load_adapter` (if an adapter path is specified in the config) or `configure_lora` (if it's the student model and LoRA training is enabled without a pre-trained adapter).
+
+## Main Entry Point: `load_models`
+
+```python
+def load_models(config: Dict[str, Any]) -> Dict[str, Any]:
+```
+
+This is the primary function used externally to load all necessary models and tokenizers based on the provided configuration dictionary (`config`).
+
+**Functionality:**
+
+1.  **Student Model & Tokenizer:** Always loads the student model and tokenizer specified by `config['models']['student']` using `setup_model` and `setup_tokenizer`.
+2.  **Teacher Model & Tokenizer (Conditional):** Loads the teacher model and tokenizer specified by `config['models']['teacher']` **only if** both conditions are met:
+    *   A teacher model path is provided (`config['models'].get('teacher')` is not None).
+    *   Pre-computed teacher logits are **not** being used (`config['dataset'].get('logits_file')` is None). This indicates that the teacher model is needed to generate logits during training.
+
+**Returns:**
+
+A dictionary containing the loaded components. It will always have `'student_model'` and `'student_tokenizer'`. It may also contain `'teacher_model'` and `'teacher_tokenizer'` depending on the configuration.
+
+This setup allows flexible configuration for different distillation scenarios, including using pre-trained adapters, training new LoRA adapters, applying quantization, and optionally loading a teacher model for on-the-fly logit generation. 

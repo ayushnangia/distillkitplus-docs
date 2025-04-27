@@ -1,0 +1,98 @@
+# Configuration (`config.json`)
+
+Configuration for distillation runs in `distillKitPlus` is managed via JSON files, typically named `config.json` or similar (e.g., `default_config.json`). These files define all the necessary parameters for setting up the dataset, models, tokenizer, training process, and distillation-specific settings.
+
+Below is a breakdown of the structure based on `default_config.json`:
+
+```json
+{
+    "project_name": "distil-logits", // Name for logging (e.g., WandB)
+    "dataset": {
+        "name": "huggingface/dataset-name", // Path or HF Hub ID
+        "split": "train",               // e.g., "train", "validation"
+        "logits_file": "path/to/logits.tfrecord", // Path to pre-computed TFRecord logits. If null, requires teacher model.
+        "num_samples": 10000,           // Max samples to use (null for all)
+        "select_range": null,             // [start, end] to select a slice (null for none)
+        "format_function": null         // Optional: path/name of a custom formatting function
+    },
+    "models": {
+        "teacher": "meta-llama/Llama-3.1-70B-Instruct", // Teacher model path/ID (needed if logits_file is null)
+        "student": "meta-llama/Llama-3.1-8B-Instruct", // Student model path/ID
+        "student_adapter": null,            // Optional: path to pre-trained student adapter (e.g., LoRA)
+        "teacher_adapter": null,            // Optional: path to pre-trained teacher adapter
+        "teacher_vocab_size": 128256       // Teacher vocab size (required if logits_file is used)
+    },
+    "tokenizer": {
+        "max_length": 4096,               // Max sequence length for truncation/filtering
+        "chat_template": null,            // Optional: Jinja chat template string
+        "student_pad_token_id": 128001,   // Pad token ID for student tokenizer
+        "teacher_pad_token_id": 128001    // Pad token ID for teacher tokenizer
+    },
+    "training": { // Standard Hugging Face TrainingArguments
+        "output_dir": "distilled_model_output",
+        "num_train_epochs": 3,
+        "per_device_train_batch_size": 2,
+        "gradient_accumulation_steps": 4,
+        "save_steps": 500,
+        "logging_steps": 10,
+        "learning_rate": 2e-5,
+        "weight_decay": 0.01,
+        "warmup_ratio": 0.03,
+        "lr_scheduler_type": "cosine",
+        "resume_from_checkpoint": null, // Path to checkpoint to resume from
+        "fp16": false,                  // Use FP16 mixed precision
+        "bf16": true                   // Use BF16 mixed precision (recommended on A100/H100)
+    },
+    "distillation": { // Parameters for LogitsTrainer and loss function
+        "temperature": 2.0,             // Softmax temperature for KL/softmax
+        "alpha": 0.1,                   // Weight for distillation loss (loss = alpha*kd_loss + (1-alpha)*task_loss)
+        "loss_type": "uld",             // Distillation loss: "fkl", "kld", "uld", "multi-ot"
+        "student_response_template": "<|start_header_id|>assistant<|end_header_id|>\\n\\n", // Used for label generation in uld/multi-ot if needed
+        "teacher_response_template": "<|start_header_id|>assistant<|end_header_id|>\\n\\n", // Used for label generation in uld/multi-ot if needed
+        "k": 100,                       // Top-k parameter for "uld" and "multi-ot" losses
+        "loss_kwargs": {                // Optional additional kwargs for specific loss types
+            // "log_loss_weight": 0.1,   // e.g., for multi-ot
+            // "sikhorn_loss_weight": 0.1 // e.g., for multi-ot
+        }
+    },
+    "model_config": {
+        "use_flash_attention": true,     // Enable Flash Attention 2 during model loading
+        "trust_remote_code": false      // Set trust_remote_code for model loading
+    },
+    "lora": { // LoRA configuration (only used if enable_training=true and student_adapter=null)
+        "enable_training": true,        // Enable LoRA training for the student model
+        "r": 16,                        // LoRA rank
+        "alpha": 32,                    // LoRA alpha scaling
+        "dropout": 0.05,
+        "bias": "none",                 // LoRA bias ("none", "all", "lora_only")
+        "task_type": "CAUSAL_LM",
+        "target_modules": [             // Modules to apply LoRA to
+            "q_proj", "k_proj", "v_proj", "o_proj",
+            "gate_proj", "up_proj", "down_proj"
+        ],
+         "modules_to_save": []          // Optional: Modules to make trainable *in addition* to LoRA layers
+    },
+    "quantization": {
+        "enabled": true                 // Enable 4-bit quantization (BitsAndBytes NF4) for model loading
+    },
+    "execution": {
+        "use_accelerate": true,         // Whether HF Accelerate is used (for distributed training)
+        "accelerate_config": null       // Optional: path to accelerate config file (e.g., in accelerate_configs/)
+    },
+    "hf_token": null                    // Optional: Hugging Face API token if needed for private models/datasets
+}
+```
+
+## Key Sections Explained
+
+*   **`dataset`**: Defines where to get the data and how to process it. Crucially, `logits_file` determines if a teacher model needs to be loaded for on-the-fly logit generation.
+*   **`models`**: Specifies the student and teacher models (and optional adapters). `teacher` is only needed if `logits_file` is not provided.
+*   **`tokenizer`**: Configures tokenization parameters like max length and padding.
+*   **`training`**: Contains standard training hyperparameters passed to `transformers.TrainingArguments`.
+*   **`distillation`**: Holds parameters specific to the distillation process, like the loss weighting (`alpha`), `temperature`, and the chosen `loss_type`.
+*   **`model_config`**: Options applied during model loading, like enabling Flash Attention.
+*   **`lora`**: Controls LoRA fine-tuning for the student model if enabled.
+*   **`quantization`**: Enables loading base models in 4-bit precision.
+*   **`execution`**: Settings related to the training execution environment, especially for distributed setups using Accelerate.
+
+You would typically create a copy of `default_config.json` and modify it for your specific distillation task. 

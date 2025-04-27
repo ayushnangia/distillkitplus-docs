@@ -1,107 +1,71 @@
 ---
-title: 'Development'
-description: 'Preview changes locally to update your docs'
+title: 'Development & Contribution'
+description: 'Information on contributing to DistilKitPlus'
 ---
 
-<Info>
-  **Prerequisite**: Please install Node.js (version 19 or higher) before proceeding. <br />
-  Please upgrade to ```docs.json``` before proceeding and delete the legacy ```mint.json``` file.
-</Info>
+## Development Setup
 
-Follow these steps to install and run Mintlify on your operating system:
+If you plan to contribute to `DistilKitPlus` or need a development setup, follow these steps after cloning the repository:
 
-**Step 1**: Install Mintlify:
+1.  **Create a Virtual Environment (Recommended):**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate # On Windows use `venv\Scripts\activate`
+    ```
 
-<CodeGroup>
+2.  **Install Dependencies:** Install the core requirements and the package in editable mode.
+    ```bash
+    pip install -r requirements.txt
+    pip install -e .
+    ```
 
-  ```bash npm
-  npm i -g mintlify
-  ```
+3.  **Install Development Dependencies (Optional):** If you plan to run tests or linters, you might need additional dependencies (specify if a `dev-requirements.txt` or similar exists).
+    ```bash
+    # pip install -r dev-requirements.txt # Example if dev dependencies exist
+    ```
 
-```bash yarn
-yarn global add mintlify
-```
+Now you can modify the source code in the `components/` or `scripts/` directories, and your changes will be reflected when you run the scripts, thanks to the editable install.
 
-</CodeGroup>
+## Code Structure Overview
 
-**Step 2**: Navigate to the docs directory (where the `docs.json` file is located) and execute the following command:
+*   **`components/`**: Contains the core reusable modules of the library:
+    *   `dataset.py`: Handles dataset loading, processing, and logit integration.
+    *   `models.py`: Manages model and tokenizer loading, PEFT configuration, and quantization.
+    *   `trainer.py`: Defines the custom `LogitsTrainer` for distillation.
+    *   `loss.py`: Implements various distillation loss functions.
+    *   `formatters.py`: Provides functions to format data before tokenization.
+    *   `config.py`: Helper for loading JSON configurations.
+*   **`config/`**: Contains example configuration files (`.json`) and potentially templates for Accelerate/DeepSpeed.
+*   **`scripts/`**: Contains executable scripts for running tasks:
+    *   `local/`: Scripts intended for local execution (e.g., `distill_logits.py`, `generate_logits.py`).
+    *   `modal/`: Scripts adapted for execution on [Modal](https://modal.com/) (if applicable).
+*   **`setup.py`**: Standard Python package setup file.
+*   **`requirements.txt`**: Lists the core dependencies.
+*   **`README.md`**: Project overview and basic usage.
+*   **`ROADMAP.md`**: Outlines planned features and future development directions.
 
-```bash
-mintlify dev
-```
+## Contributing
 
-A local preview of your documentation will be available at `http://localhost:3000`.
+We welcome contributions from the community! Whether you have ideas for improvements, new features, or bug fixes, please feel free to engage with the project.
 
-### Custom Ports
+**How to Contribute:**
 
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. To run Mintlify on port 3333, for instance, use this command:
+1.  **Issues:** Check the [Issues tab](https://github.com/agokrani/distillKitPlus/issues) on GitHub. Feel free to report bugs, suggest features, or pick up an existing issue to work on.
+2.  **Pull Requests:**
+    *   Fork the repository.
+    *   Create a new branch for your feature or bug fix.
+    *   Make your changes.
+    *   Ensure your code follows the project's style guidelines (if any).
+    *   Add tests for new functionality (if applicable).
+    *   Push your changes to your fork.
+    *   Submit a pull request to the `main` branch of the original repository.
 
-```bash
-mintlify dev --port 3333
-```
+Please provide a clear description of your changes in the pull request.
 
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
+## Roadmap
 
-```md
-Port 3000 is already in use. Trying 3001 instead.
-```
+For planned features and the future direction of the project, please refer to the [`ROADMAP.md`](https://github.com/agokrani/distillKitPlus/blob/main/ROADMAP.md) file in the repository.
 
-## Mintlify Versions
+---
 
-Please note that each CLI release is associated with a specific version of Mintlify. If your local website doesn't align with the production version, please update the CLI:
-
-<CodeGroup>
-
-```bash npm
-npm i -g mintlify@latest
-```
-
-```bash yarn
-yarn global upgrade mintlify
-```
-
-</CodeGroup>
-
-## Validating Links
-
-The CLI can assist with validating reference links made in your documentation. To identify any broken links, use the following command:
-
-```bash
-mintlify broken-links
-```
-
-## Deployment
-
-<Tip>
-  Unlimited editors available under the [Pro
-  Plan](https://mintlify.com/pricing) and above.
-</Tip>
-
-If the deployment is successful, you should see the following:
-
-<Frame>
-  <img src="/images/checks-passed.png" style={{ borderRadius: '0.5rem' }} />
-</Frame>
-
-## Code Formatting
-
-We suggest using extensions on your IDE to recognize and format MDX. If you're a VSCode user, consider the [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting, and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting.
-
-## Troubleshooting
-
-<AccordionGroup>
-  <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
-
-    This may be due to an outdated version of node. Try the following:
-    1. Remove the currently-installed version of mintlify: `npm remove -g mintlify`
-    2. Upgrade to Node v19 or higher.
-    3. Reinstall mintlify: `npm install -g mintlify`
-  </Accordion>
-
-  <Accordion title="Issue: Encountering an unknown error">
-  
-    Solution: Go to the root of your device and delete the \~/.mintlify folder. Afterwards, run `mintlify dev` again.
-  </Accordion>
-</AccordionGroup>
-
-Curious about what changed in the CLI version? [Check out the CLI changelog.](https://www.npmjs.com/package/mintlify?activeTab=versions)
+*Reference [1]:* [https://github.com/agokrani/distillKitPlus](https://github.com/agokrani/distillKitPlus)
