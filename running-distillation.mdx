@@ -11,6 +11,10 @@ Start by creating a configuration file:
 2. Copy a template config (e.g., `default_config.json` or `config_online_qwq_phi4_uld.json`)
 3. Edit the configuration parameters according to your needs
 
+<Note>
+  If you are providing a path for `"logits_file"`, you must first generate the teacher logits by following the steps in the [Generating Teacher Logits](./running-distillation#generating-teacher-logits-optional) section.
+</Note>
+
 Here's an example of the key sections you'll need to modify:
 
 ```json
@@ -19,12 +23,12 @@ Here's an example of the key sections you'll need to modify:
   "dataset": {
     "name": "tatsu-lab/alpaca",  // Your dataset path
     "logits_file": null,         // Set to path of .tfrecord if using pre-computed logits
-    "num_samples": 10000         // Limit samples for faster testing
+    "num_samples": 10000         
   },
   "models": {
     "teacher": "meta-llama/Llama-3.1-70B-Instruct",  // Your teacher model
     "student": "meta-llama/Llama-3.1-8B-Instruct",   // Your student model
-    "teacher_vocab_size": 128256                     // Required for pre-computed logits
+    "teacher_vocab_size": 128256                     
   },
   "tokenizer": {
     "max_length": 2048  // Adjust based on your GPU memory
@@ -38,7 +42,7 @@ Here's an example of the key sections you'll need to modify:
   "distillation": {
     "temperature": 2.0,
     "alpha": 0.1,
-    "loss_type": "fkl"  // Try "uld" or "multi-ot" for better results
+    "loss_type": "fkl"  // Try "uld" or "multi-ot" 
   },
   "lora": {
     "enable_training": true,
@@ -50,6 +54,11 @@ Here's an example of the key sections you'll need to modify:
   }
 }
 ```
+
+<Note>
+**Using Modal for Cloud Execution:**
+If you plan to run your jobs using Modal, you'll need to upload your configuration files (e.g., `my_config.json` or `logit_generation_config.json`) to a Modal Volume (e.g., `distillation-volume`). You should also upload the Accelerate and DeepSpeed configuration files. The corresponding Modal scripts (`scripts/modal/distill_logits.py` or `scripts/modal/generate_logits.py`) must be configured to mount this volume and access the files from the volume path.
+</Note>
 
 Refer to the [Configuration](./essentials/configuration) page for detailed explanations of all available parameters.
 
@@ -63,6 +72,9 @@ python scripts/local/distill_logits.py --config config/my_config.json
 
 # Running with Accelerate for multi-GPU training
 accelerate launch scripts/local/distill_logits.py --config config/my_config.json
+
+# Running with Modal for cloud execution
+modal run scripts/modal/distill_logits.py --config config/my_config.json
 ```
 
 ## Step 3: Monitor Training Progress
@@ -104,6 +116,11 @@ For more memory-efficient training, especially with very large teacher models, y
 
 ```bash
 python scripts/local/generate_logits.py \
+  --config config/logit_generation_config.json \
+  --output_file path/to/save/teacher_logits.tfrecord
+
+# Running with Modal for cloud execution
+modal run scripts/modal/generate_logits.py \
   --config config/logit_generation_config.json \
   --output_file path/to/save/teacher_logits.tfrecord
 ```
