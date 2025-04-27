@@ -1,11 +1,43 @@
 ## Available Formatters (`dataset.format_function`)
 
-| Formatter Name | Description | Input Format | Output Format |
-|---------------|-------------|--------------|---------------|
-| `default_format` | Standard chat format | Examples with `messages` containing chat turns (role and content) | Formatted chat using the tokenizer's template |
-| `sharegpt_format` | For ShareGPT-style data | Data with `conversations` containing turns (from: human/gpt/system, value) | Standard chat format with system message if missing |
-| `comparison_format` | For comparing two responses | Data with `prompt`, `response_a`, `response_b`, `rationale`, and `winner` | Structured chat showing comparison and result |
-| `format_for_tokenization` | Simple text extraction | Any data | Just the text content or full example if no text field |
+<div className="overflow-x-auto">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead>
+      <tr>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Formatter Name</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Input Format</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Output Format</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+      <tr>
+        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">`default_format`</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Standard chat format</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Examples with `messages` containing chat turns (role and content)</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Formatted chat using the tokenizer's template</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">`sharegpt_format`</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">For ShareGPT-style data</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Data with `conversations` containing turns (from: human/gpt/system, value)</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Standard chat format with system message if missing</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">`comparison_format`</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">For comparing two responses</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Data with `prompt`, `response_a`, `response_b`, `rationale`, and `winner`</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Structured chat showing comparison and result</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">`format_for_tokenization`</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Simple text extraction</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Any data</td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">Just the text content or full example if no text field</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 Notes:
 - All formatters except `format_for_tokenization` use the tokenizer's chat template
