@@ -57,7 +57,7 @@ Here's an example of the key sections you'll need to modify:
 
 <Note>
 **Using Modal for Cloud Execution:**
-If you plan to run your jobs using Modal, you'll need to upload your configuration files (e.g., `my_config.json` or `logit_generation_config.json`) to a Modal Volume (e.g., `distillation-volume`). You should also upload the Accelerate and DeepSpeed configuration files. The corresponding Modal scripts (`scripts/modal/distill_logits.py` or `scripts/modal/generate_logits.py`) must be configured to mount this volume and access the files from the volume path.
+If you plan to run your jobs using Modal, you'll need to upload the Accelerate and DeepSpeed configuration files to a Modal Volume (e.g., `distillation-volume`). The corresponding Modal scripts (`scripts/modal/distill_logits.py` or `scripts/modal/generate_logits.py`) must be configured to mount this volume and access the files from the volume path.
 </Note>
 
 Refer to the [Configuration](./essentials/configuration) page for detailed explanations of all available parameters.
@@ -83,9 +83,8 @@ The script will output training logs to the console, showing:
 - Loss values (combined, distillation, and task losses)
 - Learning rate changes
 - Training speed (samples/second)
-- GPU memory usage
 
-If you've configured Weights & Biases integration, you can also monitor these metrics in real-time via the WandB dashboard.
+If you've configured Weights & Biases integration, you can also monitor these metrics in real-time via the WandB dashboard. (HuggingFace Trainer integration by default)
 ## Step 4: Use Your Distilled Model
 
 Once training completes, the final model will be saved to the directory specified in `training.output_dir` with a subdirectory called `final-distilled-checkpoint`. You can load it like any Hugging Face model:
