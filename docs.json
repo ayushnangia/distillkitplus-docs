@@ -41,6 +41,11 @@
           "anchor": "GitHub",
           "href": "https://github.com/agokrani/distillKitPlus",
           "icon": "github"
+        },
+        {
+          "anchor": "DeepWiki",
+          "href": "https://deepwiki.com/agokrani/distillKitPlus",
+          "icon": "book-open"
         }
       ]
     }
