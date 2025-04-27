@@ -1,55 +1,9 @@
 ---
-title: 'Quickstart'
-description: 'Get started with DistilKitPlus in minutes'
+title: 'Running a Distillation Job'
 ---
+This guide walks you through configuring and running a distillation job using DistilKitPlus.
 
-# Quickstart Guide
-
-This guide will help you set up DistilKitPlus and run your first knowledge distillation process on language models. Follow these steps to quickly get a student model that mimics the capabilities of a larger teacher model.
-
-## Installation
-
-First, clone the repository and install the necessary dependencies.
-
-```bash
-git clone https://github.com/agokrani/distillKitPlus.git
-cd distillKitPlus
-pip install -r requirements.txt
-pip install -e .  # Install the package in editable mode
-```
-
-Make sure you have the following key dependencies installed:
-- `torch`: PyTorch library for deep learning
-- `transformers`: Hugging Face's transformers library
-- `peft`: Parameter-Efficient Fine-Tuning methods
-- `datasets`: For handling datasets efficiently
-- `accelerate`: For distributed training (optional)
-- `bitsandbytes`: For quantization support (optional)
-- `deepspeed`: For advanced distributed training (optional)
-
-## Distillation Workflow
-
-The distillation process in DistilKitPlus follows this general workflow:
-
-```mermaid
-flowchart TD
-    A[Configure Distillation] --> B{Pre-compute Logits?}
-    B -->|Yes| C[Generate Teacher Logits]
-    B -->|No| E[Run Distillation]
-    C --> D[Save to TFRecord]
-    D --> E
-    E --> F[Validate Results]
-    F --> G[Export Distilled Model]
-    
-    style A fill:#e1f5fe,stroke:#01579b
-    style C fill:#e8f5e9,stroke:#2e7d32
-    style E fill:#e8f5e9,stroke:#2e7d32
-    style G fill:#f9fbe7,stroke:#827717
-```
-
-## Running a Distillation Job
-
-### Step 1: Configure Your Distillation
+## Step 1: Configure Your Distillation
 
 Start by creating a configuration file:
 
@@ -99,7 +53,7 @@ Here's an example of the key sections you'll need to modify:
 
 Refer to the [Configuration](./essentials/configuration) page for detailed explanations of all available parameters.
 
-### Step 2: Run the Distillation Script
+## Step 2: Run the Distillation Script
 
 Execute the `distill_logits.py` script with your configuration:
 
@@ -111,7 +65,7 @@ python scripts/local/distill_logits.py --config config/my_config.json
 accelerate launch scripts/local/distill_logits.py --config config/my_config.json
 ```
 
-### Step 3: Monitor Training Progress
+## Step 3: Monitor Training Progress
 
 The script will output training logs to the console, showing:
 - Loss values (combined, distillation, and task losses)
@@ -120,12 +74,7 @@ The script will output training logs to the console, showing:
 - GPU memory usage
 
 If you've configured Weights & Biases integration, you can also monitor these metrics in real-time via the WandB dashboard.
-
-<div className="flex justify-center mb-8">
-  <img src="/images/checks-passed.png" alt="Training Metrics" className="rounded-lg shadow-md max-w-full" />
-</div>
-
-### Step 4: Use Your Distilled Model
+## Step 4: Use Your Distilled Model
 
 Once training completes, the final model will be saved to the directory specified in `training.output_dir` with a subdirectory called `final-distilled-checkpoint`. You can load it like any Hugging Face model:
 
@@ -150,6 +99,7 @@ tokenizer = AutoTokenizer.from_pretrained(base_model_id)
 
 ## Generating Teacher Logits (Optional)
 
+<Note>This feature is currently under development and only supports the `forward_kl` (`fkl`) loss type for distillation when using pre-computed logits.</Note>
 For more memory-efficient training, especially with very large teacher models, you can pre-compute teacher logits:
 
 ```bash
@@ -170,25 +120,4 @@ Then update your distillation config to use these pre-computed logits:
     "teacher_vocab_size": 128256  // Must match the teacher model that generated logits
   }
 }
-```
-
-## Next Steps
-
-- Explore the [Datasets](./essentials/datasets) section to understand how to prepare your data
-- Learn about different [Loss Functions](./essentials/losses) to optimize your distillation
-- Check [Configuration](./essentials/configuration) for all available settings
-- See [Models](./essentials/models) for details on loading and configuring models
-
-## Troubleshooting
-
-**Out of Memory Errors?**
-- Enable quantization (`quantization.enabled: true`)
-- Use LoRA instead of full fine-tuning (`lora.enable_training: true`)
-- Reduce `per_device_train_batch_size` and increase `gradient_accumulation_steps`
-- Pre-compute teacher logits to avoid loading both teacher and student models
-- Reduce `tokenizer.max_length` to process shorter sequences
-
-**Training Too Slow?**
-- Use Accelerate or DeepSpeed for multi-GPU training
-- Enable Flash Attention 2 (`model_config.use_flash_attention: true`)
-- Consider using BF16 mixed precision (`training.bf16: true`) on supported hardware
+``` 

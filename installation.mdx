@@ -1,0 +1,25 @@
+---
+title: 'Installation Guide'
+---
+Clone the repository and install the necessary dependencies:
+
+```bash
+git clone https://github.com/agokrani/distillKitPlus.git
+cd distillKitPlus
+
+# (Optional but recommended) Create and activate a virtual environment
+python3.11 -m venv venv
+source venv/bin/activate # On Windows use `venv\Scripts\activate`
+
+pip install -r requirements.txt
+pip install -e .  
+```
+<Note>
+  **Python 3.11 Required or Higher**
+</Note>
+
+
+## Using Modal (Optional)
+
+If you plan to run distillation jobs on [Modal](https://modal.com/), you'll need to set up your Modal API token.
+
